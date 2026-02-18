@@ -42,6 +42,8 @@
         "ErrorNameRequired": "A rule name is required.",
         "ErrorNoConditions": "At least one condition is required.",
         "ErrorInvalidRegex": "Invalid regular expression: %s",
+        "ErrorRegexTooLong": "Regular expression must not exceed 512 characters.",
+        "ErrorRegexReDoS": "Regular expression contains nested quantifiers (e.g. (a+)+) which risk catastrophic backtracking. Please simplify the pattern.",
         "ErrorInvalidIpRange": "Invalid IP address or CIDR range: %s",
         "ErrorRuleNotFound": "Rule not found.",
         "FieldIp": "IP Address",

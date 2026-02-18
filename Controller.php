@@ -277,6 +277,14 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
             }
 
             if (in_array($operator, ['matches_regex', 'not_matches_regex'], true) && $value !== '') {
+                if (strlen($value) > 512) {
+                    return Piwik::translate('VisitorExclusion_ErrorRegexTooLong');
+                }
+
+                if (preg_match('/[+*]\)[+*?]/', $value)) {
+                    return Piwik::translate('VisitorExclusion_ErrorRegexReDoS');
+                }
+
                 if (@preg_match('~' . $value . '~', '') === false) {
                     return Piwik::translate('VisitorExclusion_ErrorInvalidRegex', [$value]);
                 }
