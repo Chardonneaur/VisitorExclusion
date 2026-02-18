@@ -1,12 +1,9 @@
 # VisitorExclusion
 
-Block visits at the tracker level using configurable field-based rules. Visits matching a rule are silently dropped — the visitor receives a normal 200 response but no data is recorded.
+> [!CAUTION]
+> **This plugin is experimental.** It was built with [Claude Code](https://claude.ai) (AI-assisted development) and has not been reviewed or validated by the Matomo team. It is a community project provided **without any warranty** regarding correctness, stability, or performance. Use in production at your own risk and always test in a staging environment first.
 
-> **Warning**
->
-> This plugin is experimental and was coded using [Claude Code](https://claude.ai).
-> It is provided without any warranty regarding quality, stability, or performance.
-> This is a community project and is not officially supported by Matomo.
+Block visits at the tracker level using configurable field-based rules. Visits matching a rule are silently dropped — the visitor receives a normal 200 response but no data is recorded.
 
 ## Description
 
