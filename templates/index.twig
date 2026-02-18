@@ -202,7 +202,7 @@
         {% endif %}
 
         <div class="tableActionBar">
-            <a href="#ve-form-card">
+            <a href="#" id="ve-show-form-btn">
                 <span class="icon-add"></span>
                 {{ 'VisitorExclusion_AddRule'|translate }}
             </a>
@@ -211,9 +211,9 @@
 </div>
 
 {# ══════════════════════════════════════════════════════════════
-   Add / Edit form card
+   Add / Edit form card  (hidden by default; shown via JS or when editRule is set)
 ════════════════════════════════════════════════════════════════ #}
-<div class="card" id="ve-form-card">
+<div class="card" id="ve-form-card"{% if not editRule %} style="display:none;"{% endif %}>
     <div class="card-content">
         <h2 class="card-title">
             {{ editRule ? 'VisitorExclusion_EditRule'|translate : 'VisitorExclusion_AddRule'|translate }}
@@ -308,6 +308,9 @@
                 <input type="submit" class="btn" value="{{ 'VisitorExclusion_SaveRule'|translate }}" />
                 {% if editRule %}
                     <a href="?module=VisitorExclusion&action=index"
+                       class="btn-flat" style="margin-left: 12px;">{{ 'General_Cancel'|translate }}</a>
+                {% else %}
+                    <a href="#" id="ve-cancel-form"
                        class="btn-flat" style="margin-left: 12px;">{{ 'General_Cancel'|translate }}</a>
                 {% endif %}
             </div>
@@ -594,6 +597,21 @@
         updateValueInput($row);
         updateRowHint($group);
     }
+
+    /* ── Show / hide form card ────────────────────────────────── */
+    $('#ve-show-form-btn').on('click', function (e) {
+        e.preventDefault();
+        var $card = $('#ve-form-card');
+        $card.slideDown(200, function () {
+            $card[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            $('#ve-name').trigger('focus');
+        });
+    });
+
+    $('#ve-cancel-form').on('click', function (e) {
+        e.preventDefault();
+        $('#ve-form-card').slideUp(200);
+    });
 
     /* ── Add condition ────────────────────────────────────────── */
     $('#ve-add-condition').on('click', function (e) {
