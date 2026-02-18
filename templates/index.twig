@@ -3,133 +3,144 @@
 {% block content %}
 
 <style>
-/* ── Materialize override: native checkboxes must be visible ── */
-.visitorExclusion-wrap input[type="checkbox"] {
+/* ── Materialize: keep native radio + checkbox visible ───────── */
+.visitorExclusion-wrap input[type="radio"],
+.visitorExclusion-wrap input[type="checkbox"]:not(.ve-toggle-input) {
     opacity: 1;
     position: static;
     pointer-events: auto;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
 }
 
-/* ── Condition builder ── */
-.ve-condition-group {
-    margin-bottom: 10px;
+/* ── Toggle switch ───────────────────────────────────────────── */
+.ve-switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 18px;
+    cursor: pointer;
+    vertical-align: middle;
 }
+.ve-toggle-input {
+    opacity: 0 !important;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+.ve-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #bdbdbd;
+    border-radius: 18px;
+    transition: .25s;
+}
+.ve-slider:before {
+    position: absolute;
+    content: "";
+    height: 12px;
+    width: 12px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: .25s;
+}
+.ve-toggle-input:checked + .ve-slider { background-color: #43a047; }
+.ve-toggle-input:checked + .ve-slider:before { transform: translateX(16px); }
+
+/* ── Conditions summary in table ─────────────────────────────── */
+.ve-cond-summary { font-size: 12px; line-height: 1.7; }
+.ve-cond-item { display: block; }
+
+/* ── Condition builder rows ──────────────────────────────────── */
+.ve-condition-group { margin-bottom: 8px; }
+
 .ve-condition-row {
     display: flex;
     gap: 6px;
     align-items: center;
-    flex-wrap: nowrap;
 }
-.ve-condition-row select {
-    flex: 1;
-    min-width: 0;
-}
-.ve-condition-row input[type="text"] {
-    flex: 1.2;
-    min-width: 0;
-}
+.ve-condition-row select { flex: 1; min-width: 0; }
+.ve-condition-row input[type="text"] { flex: 1.2; min-width: 0; }
 .ve-condition-row .ve-remove-btn {
     flex: 0 0 auto;
+    padding: 0 6px;
+    height: 32px;
+    line-height: 32px;
+    color: #757575;
+    background: transparent;
+    border: none;
     cursor: pointer;
-    color: #c62828;
-    font-size: 20px;
-    line-height: 1;
-    padding: 0 4px;
-    user-select: none;
+    border-radius: 2px;
 }
+.ve-condition-row .ve-remove-btn:hover { color: #c62828; }
+
 .ve-row-hint {
     font-size: 11px;
     color: #757575;
-    margin-top: 3px;
-    padding-left: 4px;
+    margin-top: 2px;
+    padding-left: 2px;
     line-height: 1.5;
     display: none;
 }
-.ve-row-hint .ve-examples {
-    font-family: monospace;
-}
+.ve-row-hint .ve-examples { font-family: monospace; }
 
-/* ── Form panel ── */
-.ve-form-panel {
-    background: #f9f9f9;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    padding: 20px;
-    margin-top: 24px;
-}
-.ve-form-panel h3 {
-    margin-top: 0;
-}
-.ve-form-panel > label,
-.ve-form-panel .ve-section-label {
+/* ── Form section spacing ────────────────────────────────────── */
+.ve-field-group { margin-bottom: 16px; }
+.ve-field-group label {
     display: block;
     font-weight: bold;
     margin-bottom: 4px;
-    margin-top: 14px;
+    font-size: 13px;
+    color: #444;
 }
-.ve-form-panel input[type="text"] {
-    width: 100%;
-    box-sizing: border-box;
+.ve-field-group input[type="text"] { width: 100%; box-sizing: border-box; }
+.ve-field-group .ve-radio-group label {
+    font-weight: normal;
+    display: inline;
+    margin-right: 24px;
+    cursor: pointer;
 }
-
-/* ── Status badge ── */
-.ve-badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: bold;
-    color: #fff;
-}
-.ve-badge-on  { background: #43a047; }
-.ve-badge-off { background: #9e9e9e; }
-
-/* ── Conditions summary in table ── */
-.ve-cond-summary { font-size: 12px; line-height: 1.7; }
-.ve-cond-item { display: block; }
 </style>
 
 <div class="visitorExclusion-wrap">
 
 {# ══════════════════════════════════════════════════════════════
-   Page header
+   Rules table card
 ════════════════════════════════════════════════════════════════ #}
 <div class="card">
     <div class="card-content">
         <h2 class="card-title">{{ 'VisitorExclusion_PageTitle'|translate }}</h2>
         <p>{{ 'VisitorExclusion_PageDescription'|translate }}</p>
-        <div class="alert alert-warning" style="margin-bottom: 0;">
+        <p style="color: #e65100; font-size: 12px;">
             ⚠ {{ 'VisitorExclusion_Warning'|translate }}
-        </div>
-    </div>
-</div>
+        </p>
 
-{# ══════════════════════════════════════════════════════════════
-   Rules table
-════════════════════════════════════════════════════════════════ #}
-<div class="card">
-    <div class="card-content">
+        {# ── Hidden toggle forms (one per rule) ── #}
+        {% for rule in rules %}
+        <form method="post" id="ve-toggle-form-{{ rule.id }}" style="display:none;">
+            <input type="hidden" name="nonce"   value="{{ nonce }}" />
+            <input type="hidden" name="action"  value="toggle" />
+            <input type="hidden" name="id"      value="{{ rule.id }}" />
+            <input type="hidden" name="enabled" class="ve-enabled-input" value="" />
+        </form>
+        {% endfor %}
+
         {% if rules is empty %}
             <p class="alert alert-info">{{ 'VisitorExclusion_NoRules'|translate }}</p>
         {% else %}
-        <table class="entityTable" style="width: 100%; margin-bottom: 0;">
+        <table class="entityTable" style="width: 100%;">
             <thead>
             <tr>
-                <th style="width: 40px;">{{ 'VisitorExclusion_ColumnId'|translate }}</th>
                 <th>{{ 'VisitorExclusion_ColumnName'|translate }}</th>
                 <th>{{ 'VisitorExclusion_ColumnConditions'|translate }}</th>
-                <th style="width: 60px;">{{ 'VisitorExclusion_ColumnMatchMode'|translate }}</th>
-                <th style="width: 100px;">{{ 'VisitorExclusion_ColumnStatus'|translate }}</th>
-                <th style="width: 160px;">{{ 'VisitorExclusion_ColumnActions'|translate }}</th>
+                <th style="width: 55px; text-align: center;">{{ 'VisitorExclusion_ColumnMatchMode'|translate }}</th>
+                <th style="width: 60px; text-align: center;">{{ 'VisitorExclusion_ColumnStatus'|translate }}</th>
+                <th style="width: 70px; text-align: center;">{{ 'General_Actions'|translate }}</th>
             </tr>
             </thead>
             <tbody>
             {% for rule in rules %}
             <tr>
-                <td>{{ rule.id }}</td>
                 <td>
                     <strong>{{ rule.name|e }}</strong>
                     {% if rule.description %}
@@ -148,31 +159,40 @@
                     </div>
                 </td>
                 <td style="text-align: center;">
-                    {% if rule.match_all %}{{ 'VisitorExclusion_MatchModeAnd'|translate }}{% else %}{{ 'VisitorExclusion_MatchModeOr'|translate }}{% endif %}
-                </td>
-                <td>
-                    <span class="ve-badge {{ rule.enabled ? 've-badge-on' : 've-badge-off' }}">
-                        {% if rule.enabled %}{{ 'VisitorExclusion_StatusEnabled'|translate }}{% else %}{{ 'VisitorExclusion_StatusDisabled'|translate }}{% endif %}
+                    <span title="{{ rule.match_all ? 'VisitorExclusion_MatchAll'|translate : 'VisitorExclusion_MatchAny'|translate }}"
+                          style="font-size: 11px; font-weight: bold; color: #555;">
+                        {{ rule.match_all ? 'VisitorExclusion_MatchModeAnd'|translate : 'VisitorExclusion_MatchModeOr'|translate }}
                     </span>
                 </td>
-                <td>
-                    <form method="post" style="display: inline;">
-                        <input type="hidden" name="nonce"   value="{{ nonce }}" />
-                        <input type="hidden" name="action"  value="toggle" />
-                        <input type="hidden" name="id"      value="{{ rule.id }}" />
-                        <input type="hidden" name="enabled" value="{{ rule.enabled ? 0 : 1 }}" />
-                        <button type="submit" class="btn btn-flat btn-small">
-                            {% if rule.enabled %}{{ 'VisitorExclusion_Disable'|translate }}{% else %}{{ 'VisitorExclusion_Enable'|translate }}{% endif %}
-                        </button>
-                    </form>
+                <td style="text-align: center;">
+                    <label class="ve-switch"
+                           title="{{ rule.enabled ? 'VisitorExclusion_Disable'|translate : 'VisitorExclusion_Enable'|translate }}">
+                        <input type="checkbox"
+                               class="ve-toggle-input ve-toggle-cb"
+                               {% if rule.enabled %}checked{% endif %}
+                               data-rule-id="{{ rule.id }}"
+                               data-current="{{ rule.enabled ? 1 : 0 }}" />
+                        <span class="ve-slider"></span>
+                    </label>
+                </td>
+                <td style="text-align: center; white-space: nowrap;">
                     <a href="?module=VisitorExclusion&action=index&editId={{ rule.id }}"
-                       class="btn btn-flat btn-small">{{ 'General_Edit'|translate }}</a>
-                    <form method="post" style="display: inline;" class="ve-delete-form">
+                       class="table-action"
+                       title="{{ 'General_Edit'|translate }}">
+                        <span class="icon-edit"></span>
+                    </a>
+                    <a href="#"
+                       class="table-action ve-action-delete"
+                       data-rule-id="{{ rule.id }}"
+                       title="{{ 'VisitorExclusion_Delete'|translate }}"
+                       style="color: #c62828;">
+                        <span class="icon-delete"></span>
+                    </a>
+                    {# Hidden delete form #}
+                    <form method="post" id="ve-delete-form-{{ rule.id }}" style="display:none;">
                         <input type="hidden" name="nonce"  value="{{ nonce }}" />
                         <input type="hidden" name="action" value="delete" />
                         <input type="hidden" name="id"     value="{{ rule.id }}" />
-                        <button type="submit" class="btn btn-flat btn-small"
-                                style="color: #c62828;">{{ 'VisitorExclusion_Delete'|translate }}</button>
                     </form>
                 </td>
             </tr>
@@ -180,122 +200,150 @@
             </tbody>
         </table>
         {% endif %}
+
+        <div class="tableActionBar">
+            <a href="#ve-form-card">
+                <span class="icon-add"></span>
+                {{ 'VisitorExclusion_AddRule'|translate }}
+            </a>
+        </div>
     </div>
 </div>
 
 {# ══════════════════════════════════════════════════════════════
-   Add / Edit form
+   Add / Edit form card
 ════════════════════════════════════════════════════════════════ #}
-<div class="card">
+<div class="card" id="ve-form-card">
     <div class="card-content">
-        <div class="ve-form-panel">
-            <h3>{{ editRule ? 'VisitorExclusion_EditRule'|translate : 'VisitorExclusion_AddRule'|translate }}</h3>
+        <h2 class="card-title">
+            {{ editRule ? 'VisitorExclusion_EditRule'|translate : 'VisitorExclusion_AddRule'|translate }}
+        </h2>
 
-            <form method="post" id="ve-rule-form">
-                <input type="hidden" name="nonce"  value="{{ nonce }}" />
-                <input type="hidden" name="action" value="{{ editRule ? 'update' : 'add' }}" />
-                {% if editRule %}
-                    <input type="hidden" name="id" value="{{ editRule.id }}" />
-                {% endif %}
+        <form method="post" id="ve-rule-form">
+            <input type="hidden" name="nonce"  value="{{ nonce }}" />
+            <input type="hidden" name="action" value="{{ editRule ? 'update' : 'add' }}" />
+            {% if editRule %}
+                <input type="hidden" name="id" value="{{ editRule.id }}" />
+            {% endif %}
 
-                {# Name #}
-                <label for="ve-name">{{ 'VisitorExclusion_RuleName'|translate }} *</label>
-                <input type="text" id="ve-name" name="name" class="browser-default" required
-                       value="{{ editRule ? editRule.name|e : '' }}" />
+            {# Name + Description ─────────────────────────────── #}
+            <div class="row" style="margin-bottom: 0;">
+                <div class="col s12 m6">
+                    <div class="ve-field-group">
+                        <label for="ve-name">{{ 'VisitorExclusion_RuleName'|translate }} *</label>
+                        <input type="text" id="ve-name" name="name"
+                               class="browser-default" required
+                               value="{{ editRule ? editRule.name|e : '' }}" />
+                    </div>
+                </div>
+                <div class="col s12 m6">
+                    <div class="ve-field-group">
+                        <label for="ve-description">{{ 'VisitorExclusion_RuleDescription'|translate }}</label>
+                        <input type="text" id="ve-description" name="description"
+                               class="browser-default"
+                               value="{{ editRule ? editRule.description|e : '' }}" />
+                    </div>
+                </div>
+            </div>
 
-                {# Description #}
-                <label for="ve-description">{{ 'VisitorExclusion_RuleDescription'|translate }}</label>
-                <input type="text" id="ve-description" name="description" class="browser-default"
-                       value="{{ editRule ? editRule.description|e : '' }}" />
-
-                {# Match mode #}
-                <span class="ve-section-label">{{ 'VisitorExclusion_MatchMode'|translate }}</span>
-                <div style="margin-top: 4px;">
-                    <label style="font-weight: normal; display: inline; margin-right: 20px;">
+            {# Match mode ─────────────────────────────────────── #}
+            <div class="ve-field-group">
+                <label>{{ 'VisitorExclusion_MatchMode'|translate }}</label>
+                <div class="ve-radio-group">
+                    <label>
                         <input type="radio" name="match_all" value="1"
                                {% if not editRule or editRule.match_all %}checked{% endif %} />
                         {{ 'VisitorExclusion_MatchAll'|translate }}
                     </label>
-                    <label style="font-weight: normal; display: inline;">
+                    <label>
                         <input type="radio" name="match_all" value="0"
                                {% if editRule and not editRule.match_all %}checked{% endif %} />
                         {{ 'VisitorExclusion_MatchAny'|translate }}
                     </label>
                 </div>
+            </div>
 
-                {# Conditions #}
-                <span class="ve-section-label">{{ 'VisitorExclusion_Conditions'|translate }} *</span>
+            {# Conditions ─────────────────────────────────────── #}
+            <div class="ve-field-group">
+                <label>{{ 'VisitorExclusion_Conditions'|translate }} *</label>
 
-                <div id="ve-condition-rows" style="margin-top: 6px;">
-                    {% if editRule and editRule.conditions_decoded is not empty %}
-                        {% for cond in editRule.conditions_decoded %}
-                        <div class="ve-condition-group">
-                            <div class="ve-condition-row">
-                                <select name="condition_field[]" class="browser-default ve-field-select">
-                                    {% for fieldId, fieldLabel in availableFields %}
-                                    <option value="{{ fieldId }}"
-                                            {% if cond.field == fieldId %}selected{% endif %}>{{ fieldLabel }}</option>
-                                    {% endfor %}
-                                </select>
-                                <select name="condition_operator[]" class="browser-default ve-op-select">
-                                    {% for opId, opLabel in availableOperators %}
-                                    <option value="{{ opId }}"
-                                            {% if cond.operator == opId %}selected{% endif %}>{{ opLabel }}</option>
-                                    {% endfor %}
-                                </select>
-                                <input type="text" name="condition_value[]" class="browser-default ve-value-input"
-                                       value="{{ cond.value|e }}"
-                                       placeholder="{{ 'VisitorExclusion_Value'|translate }}" />
-                                <span class="ve-remove-btn" title="Remove condition">✕</span>
-                            </div>
-                            <div class="ve-row-hint"></div>
-                        </div>
-                        {% endfor %}
-                    {% else %}
+                <div id="ve-condition-rows">
+                    {% set conditionList = editRule and editRule.conditions_decoded is not empty ? editRule.conditions_decoded : [{}] %}
+                    {% for cond in conditionList %}
                     <div class="ve-condition-group">
                         <div class="ve-condition-row">
                             <select name="condition_field[]" class="browser-default ve-field-select">
                                 {% for fieldId, fieldLabel in availableFields %}
-                                <option value="{{ fieldId }}">{{ fieldLabel }}</option>
+                                <option value="{{ fieldId }}"
+                                        {% if cond.field is defined and cond.field == fieldId %}selected{% endif %}>{{ fieldLabel }}</option>
                                 {% endfor %}
                             </select>
                             <select name="condition_operator[]" class="browser-default ve-op-select">
                                 {% for opId, opLabel in availableOperators %}
-                                <option value="{{ opId }}">{{ opLabel }}</option>
+                                <option value="{{ opId }}"
+                                        {% if cond.operator is defined and cond.operator == opId %}selected{% endif %}>{{ opLabel }}</option>
                                 {% endfor %}
                             </select>
-                            <input type="text" name="condition_value[]" class="browser-default ve-value-input"
+                            <input type="text" name="condition_value[]"
+                                   class="browser-default ve-value-input"
+                                   value="{{ cond.value is defined ? cond.value|e : '' }}"
                                    placeholder="{{ 'VisitorExclusion_Value'|translate }}" />
-                            <span class="ve-remove-btn" title="Remove condition">✕</span>
+                            <button type="button" class="ve-remove-btn" title="{{ 'General_Remove'|translate }}">
+                                <span class="icon-minus"></span>
+                            </button>
                         </div>
                         <div class="ve-row-hint"></div>
                     </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
 
-                <a href="#" id="ve-add-condition" style="display: inline-block; margin-top: 6px; font-size: 13px;">
+                <a href="#" id="ve-add-condition" style="font-size: 13px; margin-top: 6px; display: inline-block;">
+                    <span class="icon-add" style="font-size: 11px;"></span>
                     {{ 'VisitorExclusion_AddCondition'|translate }}
                 </a>
+            </div>
 
-                <div style="margin-top: 20px;">
-                    <button type="submit" class="btn">{{ 'VisitorExclusion_SaveRule'|translate }}</button>
-                    {% if editRule %}
-                        &nbsp;
-                        <a href="?module=VisitorExclusion&action=index"
-                           class="btn btn-flat">{{ 'VisitorExclusion_Cancel'|translate }}</a>
-                    {% endif %}
-                </div>
-            </form>
-        </div>
+            {# Submit buttons ─────────────────────────────────── #}
+            <div style="margin-top: 8px;">
+                <input type="submit" class="btn" value="{{ 'VisitorExclusion_SaveRule'|translate }}" />
+                {% if editRule %}
+                    <a href="?module=VisitorExclusion&action=index"
+                       class="btn-flat" style="margin-left: 12px;">{{ 'General_Cancel'|translate }}</a>
+                {% endif %}
+            </div>
+        </form>
     </div>
 </div>
 
 </div>{# .visitorExclusion-wrap #}
 
 {# ══════════════════════════════════════════════════════════════
-   Datalist elements — provide autocomplete suggestions for
-   fields with known finite value sets.
+   Native Matomo confirm dialog (delete)
 ════════════════════════════════════════════════════════════════ #}
+<div class="ui-confirm" id="ve-confirm-delete">
+    <h2>{{ 'VisitorExclusion_ConfirmDeleteTitle'|translate }}</h2>
+    <p>{{ 'VisitorExclusion_ConfirmDelete'|translate }}</p>
+    <input role="yes" type="button" value="{{ 'General_Yes'|translate }}" />
+    <input role="no"  type="button" value="{{ 'General_No'|translate }}" />
+</div>
+
+{# ══════════════════════════════════════════════════════════════
+   Datalists (browser autocomplete for known value sets)
+════════════════════════════════════════════════════════════════ #}
+<datalist id="ve-dl-screenResolution">
+    <option value="1920x1080">1920x1080 — Full HD desktop</option>
+    <option value="2560x1440">2560x1440 — 2K / QHD desktop</option>
+    <option value="3840x2160">3840x2160 — 4K desktop</option>
+    <option value="1366x768">1366x768 — laptop</option>
+    <option value="1280x800">1280x800 — laptop</option>
+    <option value="1440x900">1440x900 — laptop</option>
+    <option value="375x812">375x812 — iPhone X / 11</option>
+    <option value="390x844">390x844 — iPhone 12 / 13 / 14</option>
+    <option value="414x896">414x896 — iPhone XR / 11</option>
+    <option value="360x800">360x800 — Android phone</option>
+    <option value="768x1024">768x1024 — iPad portrait</option>
+    <option value="1024x768">1024x768 — iPad landscape</option>
+</datalist>
 
 <datalist id="ve-dl-deviceType">
     <option value="smartphone">smartphone — mobile phone</option>
@@ -304,8 +352,8 @@
     <option value="bot">bot — search engine crawlers, scrapers</option>
     <option value="tv">tv — smart TV</option>
     <option value="console">console — game console</option>
-    <option value="car browser">car browser — in-vehicle browser</option>
-    <option value="smart display">smart display — smart screen</option>
+    <option value="car browser">car browser</option>
+    <option value="smart display">smart display</option>
     <option value="smart speaker">smart speaker</option>
     <option value="wearable">wearable — smartwatch</option>
     <option value="peripheral">peripheral — printer, camera</option>
@@ -339,21 +387,6 @@
     <option value="FreeBSD">FreeBSD</option>
 </datalist>
 
-<datalist id="ve-dl-screenResolution">
-    <option value="1920x1080">1920x1080 — Full HD desktop</option>
-    <option value="2560x1440">2560x1440 — 2K / QHD desktop</option>
-    <option value="3840x2160">3840x2160 — 4K desktop</option>
-    <option value="1366x768">1366x768 — laptop</option>
-    <option value="1280x800">1280x800 — laptop</option>
-    <option value="1440x900">1440x900 — laptop</option>
-    <option value="375x812">375x812 — iPhone X / 11</option>
-    <option value="390x844">390x844 — iPhone 12 / 13 / 14</option>
-    <option value="414x896">414x896 — iPhone XR / 11</option>
-    <option value="360x800">360x800 — Android phone</option>
-    <option value="768x1024">768x1024 — iPad portrait</option>
-    <option value="1024x768">1024x768 — iPad landscape</option>
-</datalist>
-
 <datalist id="ve-dl-browserLanguage">
     <option value="ar">ar — Arabic</option>
     <option value="de">de — German</option>
@@ -373,9 +406,7 @@
     <option value="zh">zh — Chinese</option>
 </datalist>
 
-{# ══════════════════════════════════════════════════════════════
-   Hidden template row (cloned by JS when adding a condition)
-════════════════════════════════════════════════════════════════ #}
+{# ── Hidden template row (cloned when adding a condition) ──── #}
 <div id="ve-row-template" style="display: none;" aria-hidden="true">
     <div class="ve-condition-group">
         <div class="ve-condition-row">
@@ -391,7 +422,9 @@
             </select>
             <input type="text" name="condition_value[]" class="browser-default ve-value-input"
                    placeholder="{{ 'VisitorExclusion_Value'|translate }}" />
-            <span class="ve-remove-btn" title="Remove condition">✕</span>
+            <button type="button" class="ve-remove-btn" title="{{ 'General_Remove'|translate }}">
+                <span class="icon-minus"></span>
+            </button>
         </div>
         <div class="ve-row-hint"></div>
     </div>
@@ -400,23 +433,9 @@
 <script>
 (function ($) {
 
-    /* ── Confirm delete ───────────────────────────────────────── */
-    var confirmDeleteMsg = '{{ "VisitorExclusion_ConfirmDelete"|translate|e("js") }}';
-    var examplesLabel    = '{{ "VisitorExclusion_ExamplesLabel"|translate|e("js") }}';
-
-    $(document).on('submit', '.ve-delete-form', function (e) {
-        if (!window.confirm(confirmDeleteMsg)) { e.preventDefault(); }
-    });
-
     /* ── Per-field metadata ───────────────────────────────────── */
-    /*
-     * For each field:
-     *   placeholder  — shown in the value input
-     *   hint         — description sentence shown below the row
-     *   examples     — array of concrete values shown as "Examples: ..."
-     *   datalist     — id of a <datalist> element to attach (optional)
-     *   opsGroup     — 'ip' | 'string' (controls which operators are shown)
-     */
+    var examplesLabel = '{{ "VisitorExclusion_ExamplesLabel"|translate|e("js") }}';
+
     var fieldMeta = {
         'ip': {
             placeholder: '192.168.1.0/24',
@@ -484,8 +503,6 @@
             opsGroup: 'string'
         }
     };
-
-    /* Custom dimensions share the same generic metadata */
     for (var d = 1; d <= 20; d++) {
         fieldMeta['dimension' + d] = {
             placeholder: 'value',
@@ -511,13 +528,17 @@
     var opsForIp     = ['equals', 'not_equals', 'in_ip_range', 'not_in_ip_range'];
     var opsForString = ['equals', 'not_equals', 'contains', 'not_contains',
                         'starts_with', 'ends_with', 'matches_regex', 'not_matches_regex'];
-
     var regexNote = '{{ "VisitorExclusion_HintRegexNote"|translate|e("js") }}';
 
-    /* ── Core helpers ────────────────────────────────────────── */
-
+    /* ── Helpers ──────────────────────────────────────────────── */
     function getMeta(field) {
         return fieldMeta[field] || { placeholder: '', hint: '', examples: [], opsGroup: 'string' };
+    }
+
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     function rebuildOpSelect($row) {
@@ -530,82 +551,41 @@
         $.each(allowed, function (i, opId) {
             $opSel.append($('<option>').val(opId).text(opsAll[opId]));
         });
-
-        if (allowed.indexOf(current) !== -1) {
-            $opSel.val(current);
-        }
+        if (allowed.indexOf(current) !== -1) { $opSel.val(current); }
     }
 
     function updateValueInput($row) {
-        var field    = $row.find('.ve-field-select').val();
-        var meta     = getMeta(field);
-        var $input   = $row.find('.ve-value-input');
-
-        /* placeholder */
-        var phText = meta.examples.length > 0
-            ? meta.placeholder || meta.examples[0]
-            : '';
+        var meta   = getMeta($row.find('.ve-field-select').val());
+        var $input = $row.find('.ve-value-input');
         if ($input.val() === '') {
-            $input.attr('placeholder', phText || '{{ "VisitorExclusion_Value"|translate|e("js") }}');
+            $input.attr('placeholder', meta.examples[0] || meta.placeholder || '');
         }
-
-        /* datalist — link or unlink */
-        if (meta.datalist) {
-            $input.attr('list', meta.datalist);
-        } else {
-            $input.removeAttr('list');
-        }
+        meta.datalist ? $input.attr('list', meta.datalist) : $input.removeAttr('list');
     }
 
     function updateRowHint($group) {
-        var $row      = $group.find('.ve-condition-row');
-        var $hintDiv  = $group.find('.ve-row-hint');
-        var field     = $row.find('.ve-field-select').val();
-        var operator  = $row.find('.ve-op-select').val();
-        var meta      = getMeta(field);
+        var $row     = $group.find('.ve-condition-row');
+        var $hint    = $group.find('.ve-row-hint');
+        var field    = $row.find('.ve-field-select').val();
+        var operator = $row.find('.ve-op-select').val();
+        var meta     = getMeta(field);
+        var lines    = [];
 
-        var lines = [];
+        if (meta.hint) { lines.push(meta.hint); }
 
-        /* Field hint */
-        if (meta.hint) {
-            lines.push(meta.hint);
+        if (meta.examples && meta.examples.length) {
+            lines.push(examplesLabel + ' <span class="ve-examples">'
+                + meta.examples.map(escHtml).join(', ') + '</span>');
         }
 
-        /* Examples */
-        if (meta.examples && meta.examples.length > 0) {
-            lines.push(
-                examplesLabel + ' <span class="ve-examples">'
-                + meta.examples.map(function (v) { return escHtml(v); }).join(', ')
-                + '</span>'
-            );
-        }
-
-        /* Regex-specific note */
         if (operator === 'matches_regex' || operator === 'not_matches_regex') {
-            if (field === 'userAgent' && meta.examples.length > 0) {
-                lines.push(
-                    regexNote + ' &mdash; <span class="ve-examples">'
-                    + escHtml(meta.examples.slice(0, 4).join('|'))
-                    + '</span>'
-                );
-            } else {
-                lines.push(regexNote);
-            }
+            lines.push(regexNote + (meta.examples.length
+                ? ' &mdash; <span class="ve-examples">'
+                  + escHtml(meta.examples.slice(0, 4).join('|')) + '</span>'
+                : ''));
         }
 
-        if (lines.length > 0) {
-            $hintDiv.html(lines.join('<br>')).show();
-        } else {
-            $hintDiv.hide();
-        }
-    }
-
-    function escHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+        lines.length ? $hint.html(lines.join('<br>')).show() : $hint.hide();
     }
 
     function initRow($group) {
@@ -615,9 +595,7 @@
         updateRowHint($group);
     }
 
-    /* ── Event bindings ─────────────────────────────────────── */
-
-    /* Add condition */
+    /* ── Add condition ────────────────────────────────────────── */
     $('#ve-add-condition').on('click', function (e) {
         e.preventDefault();
         var $tmpl = $('#ve-row-template .ve-condition-group').clone(true);
@@ -627,27 +605,50 @@
         $tmpl.find('.ve-field-select').trigger('focus');
     });
 
-    /* Remove condition */
+    /* ── Remove condition ─────────────────────────────────────── */
     $(document).on('click', '.ve-remove-btn', function () {
         if ($('#ve-condition-rows .ve-condition-group').length > 1) {
             $(this).closest('.ve-condition-group').remove();
         }
     });
 
-    /* Field changed */
+    /* ── Field / operator change ──────────────────────────────── */
     $(document).on('change', '.ve-field-select', function () {
         var $group = $(this).closest('.ve-condition-group');
         rebuildOpSelect($group.find('.ve-condition-row'));
         updateValueInput($group.find('.ve-condition-row'));
         updateRowHint($group);
     });
-
-    /* Operator changed */
     $(document).on('change', '.ve-op-select', function () {
         updateRowHint($(this).closest('.ve-condition-group'));
     });
 
-    /* Initialise all existing rows on page load */
+    /* ── Toggle switch ────────────────────────────────────────── */
+    $(document).on('change', '.ve-toggle-cb', function () {
+        var $cb      = $(this);
+        var ruleId   = $cb.data('rule-id');
+        var enabled  = $cb.is(':checked') ? 1 : 0;
+        var $form    = $('#ve-toggle-form-' + ruleId);
+        $form.find('.ve-enabled-input').val(enabled);
+        $form.submit();
+    });
+
+    /* ── Delete via ui-confirm ────────────────────────────────── */
+    var pendingDeleteId = null;
+
+    $(document).on('click', '.ve-action-delete', function (e) {
+        e.preventDefault();
+        pendingDeleteId = $(this).data('rule-id');
+        piwikHelper.modalConfirm('#ve-confirm-delete', {
+            yes: function () {
+                if (pendingDeleteId !== null) {
+                    $('#ve-delete-form-' + pendingDeleteId).submit();
+                }
+            }
+        });
+    });
+
+    /* ── Initialise all existing condition rows ───────────────── */
     $('#ve-condition-rows .ve-condition-group').each(function () {
         initRow($(this));
     });
