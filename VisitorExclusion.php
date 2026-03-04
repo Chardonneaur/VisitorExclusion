@@ -17,8 +17,14 @@ class VisitorExclusion extends Plugin
     public function registerEvents(): array
     {
         return [
+            'AssetManager.getStylesheetFiles' => 'getStylesheetFiles',
             'Tracker.isExcludedVisit' => 'onIsExcludedVisit',
         ];
+    }
+
+    public function getStylesheetFiles(array &$stylesheets): void
+    {
+        $stylesheets[] = 'plugins/VisitorExclusion/stylesheets/main.less';
     }
 
     /**

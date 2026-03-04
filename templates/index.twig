@@ -1,107 +1,6 @@
 {% extends 'admin.twig' %}
 
 {% block content %}
-
-<style>
-/* ── Materialize: keep native radio + checkbox visible ───────── */
-.visitorExclusion-wrap input[type="radio"],
-.visitorExclusion-wrap input[type="checkbox"]:not(.ve-toggle-input) {
-    opacity: 1;
-    position: static;
-    pointer-events: auto;
-}
-
-/* ── Toggle switch ───────────────────────────────────────────── */
-.ve-switch {
-    position: relative;
-    display: inline-block;
-    width: 34px;
-    height: 18px;
-    cursor: pointer;
-    vertical-align: middle;
-}
-.ve-toggle-input {
-    opacity: 0 !important;
-    width: 0;
-    height: 0;
-    position: absolute;
-}
-.ve-slider {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #bdbdbd;
-    border-radius: 18px;
-    transition: .25s;
-}
-.ve-slider:before {
-    position: absolute;
-    content: "";
-    height: 12px;
-    width: 12px;
-    left: 3px;
-    bottom: 3px;
-    background-color: #fff;
-    border-radius: 50%;
-    transition: .25s;
-}
-.ve-toggle-input:checked + .ve-slider { background-color: #43a047; }
-.ve-toggle-input:checked + .ve-slider:before { transform: translateX(16px); }
-
-/* ── Conditions summary in table ─────────────────────────────── */
-.ve-cond-summary { font-size: 12px; line-height: 1.7; }
-.ve-cond-item { display: block; }
-
-/* ── Condition builder rows ──────────────────────────────────── */
-.ve-condition-group { margin-bottom: 8px; }
-
-.ve-condition-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-.ve-condition-row select { flex: 1; min-width: 0; }
-.ve-condition-row input[type="text"] { flex: 1.2; min-width: 0; }
-.ve-condition-row .ve-remove-btn {
-    flex: 0 0 auto;
-    padding: 0 6px;
-    height: 32px;
-    line-height: 32px;
-    color: #757575;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    border-radius: 2px;
-}
-.ve-condition-row .ve-remove-btn:hover { color: #c62828; }
-
-.ve-row-hint {
-    font-size: 11px;
-    color: #757575;
-    margin-top: 2px;
-    padding-left: 2px;
-    line-height: 1.5;
-    display: none;
-}
-.ve-row-hint .ve-examples { font-family: monospace; }
-
-/* ── Form section spacing ────────────────────────────────────── */
-.ve-field-group { margin-bottom: 16px; }
-.ve-field-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 4px;
-    font-size: 13px;
-    color: #444;
-}
-.ve-field-group input[type="text"] { width: 100%; box-sizing: border-box; }
-.ve-field-group .ve-radio-group label {
-    font-weight: normal;
-    display: inline;
-    margin-right: 24px;
-    cursor: pointer;
-}
-</style>
-
 <div class="visitorExclusion-wrap">
 
 {# ══════════════════════════════════════════════════════════════
@@ -109,11 +8,11 @@
 ════════════════════════════════════════════════════════════════ #}
 <div class="card">
     <div class="card-content">
-        <h2 class="card-title">{{ 'VisitorExclusion_PageTitle'|translate }}</h2>
-        <p>{{ 'VisitorExclusion_PageDescription'|translate }}</p>
-        <p style="color: #e65100; font-size: 12px;">
-            ⚠ {{ 'VisitorExclusion_Warning'|translate }}
-        </p>
+        <div class="ve-header">
+            <h2 class="card-title">{{ 'VisitorExclusion_PageTitle'|translate }}</h2>
+            <p class="ve-page-description">{{ 'VisitorExclusion_PageDescription'|translate }}</p>
+            <p class="ve-warning">{{ 'VisitorExclusion_Warning'|translate }}</p>
+        </div>
 
         {# ── Hidden toggle forms (one per rule) ── #}
         {% for rule in rules %}
@@ -128,14 +27,14 @@
         {% if rules is empty %}
             <p class="alert alert-info">{{ 'VisitorExclusion_NoRules'|translate }}</p>
         {% else %}
-        <table class="entityTable" style="width: 100%;">
+        <table class="entityTable ve-rules-table">
             <thead>
             <tr>
                 <th>{{ 'VisitorExclusion_ColumnName'|translate }}</th>
                 <th>{{ 'VisitorExclusion_ColumnConditions'|translate }}</th>
-                <th style="width: 55px; text-align: center;">{{ 'VisitorExclusion_ColumnMatchMode'|translate }}</th>
-                <th style="width: 60px; text-align: center;">{{ 'VisitorExclusion_ColumnStatus'|translate }}</th>
-                <th style="width: 70px; text-align: center;">{{ 'General_Actions'|translate }}</th>
+                <th class="ve-col-match">{{ 'VisitorExclusion_ColumnMatchMode'|translate }}</th>
+                <th class="ve-col-status">{{ 'VisitorExclusion_ColumnStatus'|translate }}</th>
+                <th class="ve-col-actions">{{ 'General_Actions'|translate }}</th>
             </tr>
             </thead>
             <tbody>
@@ -144,7 +43,7 @@
                 <td>
                     <strong>{{ rule.name|e }}</strong>
                     {% if rule.description %}
-                        <br><small style="color: #757575;">{{ rule.description|e }}</small>
+                        <br><small class="ve-rule-description">{{ rule.description|e }}</small>
                     {% endif %}
                 </td>
                 <td>
@@ -158,13 +57,13 @@
                         {% endfor %}
                     </div>
                 </td>
-                <td style="text-align: center;">
+                <td class="ve-centered">
                     <span title="{{ rule.match_all ? 'VisitorExclusion_MatchAll'|translate : 'VisitorExclusion_MatchAny'|translate }}"
-                          style="font-size: 11px; font-weight: bold; color: #555;">
+                          class="ve-match-chip">
                         {{ rule.match_all ? 'VisitorExclusion_MatchModeAnd'|translate : 'VisitorExclusion_MatchModeOr'|translate }}
                     </span>
                 </td>
-                <td style="text-align: center;">
+                <td class="ve-centered">
                     <label class="ve-switch"
                            title="{{ rule.enabled ? 'VisitorExclusion_Disable'|translate : 'VisitorExclusion_Enable'|translate }}">
                         <input type="checkbox"
@@ -175,7 +74,7 @@
                         <span class="ve-slider"></span>
                     </label>
                 </td>
-                <td style="text-align: center; white-space: nowrap;">
+                <td class="ve-centered ve-actions-cell">
                     <a href="?module=VisitorExclusion&action=index&editId={{ rule.id }}"
                        class="table-action"
                        title="{{ 'General_Edit'|translate }}">
@@ -185,7 +84,7 @@
                        class="table-action ve-action-delete"
                        data-rule-id="{{ rule.id }}"
                        title="{{ 'VisitorExclusion_Delete'|translate }}"
-                       style="color: #c62828;">
+                       class="table-action ve-action-delete-link">
                         <span class="icon-delete"></span>
                     </a>
                     {# Hidden delete form #}
@@ -201,7 +100,7 @@
         </table>
         {% endif %}
 
-        <div class="tableActionBar">
+        <div class="tableActionBar ve-table-action-bar">
             <a href="#" id="ve-show-form-btn">
                 <span class="icon-add"></span>
                 {{ 'VisitorExclusion_AddRule'|translate }}
@@ -213,7 +112,7 @@
 {# ══════════════════════════════════════════════════════════════
    Add / Edit form card  (hidden by default; shown via JS or when editRule is set)
 ════════════════════════════════════════════════════════════════ #}
-<div class="card" id="ve-form-card"{% if not editRule %} style="display:none;"{% endif %}>
+<div class="card ve-form-card" id="ve-form-card"{% if not editRule %} style="display:none;"{% endif %}>
     <div class="card-content">
         <h2 class="card-title">
             {{ editRule ? 'VisitorExclusion_EditRule'|translate : 'VisitorExclusion_AddRule'|translate }}
@@ -227,7 +126,7 @@
             {% endif %}
 
             {# Name + Description ─────────────────────────────── #}
-            <div class="row" style="margin-bottom: 0;">
+            <div class="row ve-form-row">
                 <div class="col s12 m6">
                     <div class="ve-field-group">
                         <label for="ve-name">{{ 'VisitorExclusion_RuleName'|translate }} *</label>
@@ -297,21 +196,21 @@
                     {% endfor %}
                 </div>
 
-                <a href="#" id="ve-add-condition" style="font-size: 13px; margin-top: 6px; display: inline-block;">
-                    <span class="icon-add" style="font-size: 11px;"></span>
+                <a href="#" id="ve-add-condition" class="ve-add-condition-btn">
+                    <span class="icon-add"></span>
                     {{ 'VisitorExclusion_AddCondition'|translate }}
                 </a>
             </div>
 
             {# Submit buttons ─────────────────────────────────── #}
-            <div style="margin-top: 8px;">
+            <div class="ve-form-actions">
                 <input type="submit" class="btn" value="{{ 'VisitorExclusion_SaveRule'|translate }}" />
                 {% if editRule %}
                     <a href="?module=VisitorExclusion&action=index"
-                       class="btn-flat" style="margin-left: 12px;">{{ 'General_Cancel'|translate }}</a>
+                       class="btn-flat ve-cancel-btn">{{ 'General_Cancel'|translate }}</a>
                 {% else %}
                     <a href="#" id="ve-cancel-form"
-                       class="btn-flat" style="margin-left: 12px;">{{ 'General_Cancel'|translate }}</a>
+                       class="btn-flat ve-cancel-btn">{{ 'General_Cancel'|translate }}</a>
                 {% endif %}
             </div>
         </form>
