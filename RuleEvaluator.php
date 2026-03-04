@@ -13,6 +13,7 @@ use DeviceDetector\DeviceDetector;
 use Matomo\Network\IP;
 use Piwik\Container\StaticContainer;
 use Piwik\DeviceDetector\DeviceDetectorFactory;
+use Piwik\Plugins\UserCountry\LocationProvider;
 use Piwik\Tracker\Request;
 
 /**
@@ -141,6 +142,12 @@ class RuleEvaluator
                 $os = $dd->getOs('name');
                 return strtolower(is_string($os) ? $os : '');
 
+            case 'country':
+                return $this->resolveCountry($request);
+
+            case 'referrerType':
+                return $this->classifyReferrerType($request);
+
             default:
                 // Custom dimensions: dimension1 … dimension20
                 if (preg_match('/^dimension([1-9]|1\d|20)$/', $field, $m)) {
@@ -227,6 +234,93 @@ class RuleEvaluator
         }
 
         return $ip->isInRanges($ranges);
+    }
+
+    /**
+     * Resolves the visitor's country code from GeoIP via Matomo's LocationProvider.
+     * Returns a lowercase ISO 3166-1 alpha-2 code (e.g. "fr", "us") or "" on failure.
+     */
+    private function resolveCountry(Request $request): string
+    {
+        try {
+            $binary = $request->getIp();
+            if (empty($binary)) {
+                return '';
+            }
+            $ip       = IP::fromBinaryIP($binary)->toString();
+            $provider = LocationProvider::getCurrentProvider();
+            $location = $provider->getLocation(['ip' => $ip]);
+            if (empty($location) || !isset($location['country_code'])) {
+                return '';
+            }
+            return strtolower((string) $location['country_code']);
+        } catch (\Exception $e) {
+            return '';
+        }
+    }
+
+    /**
+     * Classifies the referrer into one of four channel types:
+     *   direct   — no referrer URL
+     *   campaign — Matomo/UTM campaign parameters detected
+     *   search   — referrer is a known search engine
+     *   website  — any other external referrer
+     */
+    private function classifyReferrerType(Request $request): string
+    {
+        // Campaign params set by Matomo JS tracker (_rcn / _rcs)
+        if (trim((string) $request->getParam('_rcn')) !== ''
+            || trim((string) $request->getParam('_rcs')) !== '') {
+            return 'campaign';
+        }
+
+        // UTM / Matomo Tag Manager campaign params in the page URL
+        $pageUrl = (string) $request->getParam('url');
+        if (preg_match('/[?&](utm_source|utm_campaign|utm_medium|mtm_source|mtm_campaign)=/i', $pageUrl)) {
+            return 'campaign';
+        }
+
+        $referrer = trim((string) $request->getParam('urlref'));
+        if ($referrer === '') {
+            return 'direct';
+        }
+
+        if ($this->isSearchEngineReferrer($referrer)) {
+            return 'search';
+        }
+
+        return 'website';
+    }
+
+    /**
+     * Returns true if the referrer URL's host matches a known search engine brand.
+     * Uses a domain-component check to handle country TLDs (google.fr, yandex.ru …).
+     */
+    private function isSearchEngineReferrer(string $referrer): bool
+    {
+        $host = strtolower((string) parse_url($referrer, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        $parts = explode('.', $host);
+        if ($parts[0] === 'www') {
+            array_shift($parts);
+        }
+
+        $knownBrands = [
+            'google', 'bing', 'yahoo', 'baidu', 'yandex', 'duckduckgo',
+            'ecosia', 'qwant', 'ask', 'aol', 'naver', 'sogou', 'seznam',
+            'startpage', 'kagi', 'brave',
+        ];
+
+        foreach ($parts as $part) {
+            if (in_array($part, $knownBrands, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

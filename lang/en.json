@@ -47,6 +47,8 @@
         "ErrorInvalidIpRange": "Invalid IP address or CIDR range: %s",
         "ErrorRuleNotFound": "Rule not found.",
         "FieldIp": "IP Address",
+        "FieldCountry": "Country",
+        "FieldReferrerType": "Traffic Source",
         "FieldUserAgent": "User Agent",
         "FieldPageUrl": "Page URL",
         "FieldReferrerUrl": "Referrer URL",
@@ -79,6 +81,8 @@
         "HintBrowserLanguage": "Two-letter ISO 639-1 code sent by the browser in Accept-Language.",
         "HintScreenResolution": "Width x Height as reported by the browser (e.g. 1920x1080). Empty if the visitor blocked it.",
         "HintCustomDimension": "The value passed in the tracking request for this custom dimension.",
-        "HintRegexNote": "No delimiters. Use | for alternatives. Case-insensitive by default."
+        "HintRegexNote": "No delimiters. Use | for alternatives. Case-insensitive by default.",
+        "HintCountry": "Lowercase ISO 3166-1 alpha-2 country code resolved from the visitor IP via GeoIP.",
+        "HintReferrerType": "Classified from the referrer URL and campaign parameters. One of: direct, search, campaign, website."
     }
 }

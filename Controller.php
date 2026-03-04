@@ -302,6 +302,8 @@ class Controller extends \Piwik\Plugin\ControllerAdmin
     {
         $fields = [
             'ip'              => Piwik::translate('VisitorExclusion_FieldIp'),
+            'country'         => Piwik::translate('VisitorExclusion_FieldCountry'),
+            'referrerType'    => Piwik::translate('VisitorExclusion_FieldReferrerType'),
             'userAgent'       => Piwik::translate('VisitorExclusion_FieldUserAgent'),
             'pageUrl'         => Piwik::translate('VisitorExclusion_FieldPageUrl'),
             'referrerUrl'     => Piwik::translate('VisitorExclusion_FieldReferrerUrl'),
